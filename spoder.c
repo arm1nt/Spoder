@@ -139,6 +139,8 @@ int main(int argc, char **argv)
 
     char *stripped_url = url_without_protocol(url);
 
+    
+
 
     if (custom_port_provided) {
         free(port);
