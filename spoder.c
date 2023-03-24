@@ -25,6 +25,10 @@ static void help(void)
     printf("\t -p, --port \t\t Specify port to be used, if not provided 80 is used as default.\n");
     printf("\t -v, --verbose \t\t Verbose mode: Display more information.\n");
     printf("\t -o, --output \t\t Specify output file, if not provided stdout is used as default.\n");
+    printf("\t -e, --email \t\t Also search for email addresses.\n");
+    printf("\t -t, --tel \t\t Also search for phone numbers.\n");
+    printf("\t -s, --sort \t\t Sort output by category (tel number, email, link).\n");
+    printf("\t -r, --recursive \t Follow found links.\n");
     
     exit(EXIT_SUCCESS);
 }
@@ -66,19 +70,35 @@ int main(int argc, char **argv)
         {"help", no_argument, NULL, 'h'},
         {"verbose", no_argument, NULL, 'v'},
         {"output", required_argument, NULL, 'o'},
+        {"tel", no_argument, NULL, 't'},
+        {"email", no_argument, NULL, 'e'},
+        {"sort", no_argument, NULL, 's'},
+        {"recursive", no_argument, NULL, 'r'},
         0
     };
 
+    //Check that option occurs max. once (or max. given limit if specified otherwise)
     u_int8_t count_v = 0;
     u_int8_t count_o = 0;
     u_int8_t count_p = 0;
+    u_int8_t count_t = 0;
+    u_int8_t count_e = 0;
+    u_int8_t count_s = 0;
+    u_int8_t count_r = 0;
 
     u_int8_t is_verbose = 0;
+    u_int8_t filter_tel = 0;
+    u_int8_t filter_email = 0;
+    u_int8_t sort_output = 0;
+    u_int8_t search_recursive = 0;
     u_int8_t custom_port_provided = 0;
     char* port = "80";
     char* output_file = NULL;
 
-    while ((c = getopt_long(argc, argv, ":hvo:p:", longoptions, longindex)) != -1) {
+    char* option_limit_err_msg = "Option, -%s, --%s must not be given more than %s";
+
+    //TODO: Refactor: Move checking if option has already occured and incrementing counter to function!
+    while ((c = getopt_long(argc, argv, ":hvo:p:tesr", longoptions, longindex)) != -1) {
         switch(c) {
             case 'h':
                 help();
@@ -118,6 +138,34 @@ int main(int argc, char **argv)
                 ++count_v;
                 is_verbose = 1;
                 break;
+            case 't':
+                if (count_t)
+                    usage("Option -t, --tel must not be given more than once");
+                ++count_t;
+                
+                filter_tel = 1;
+                break;
+            case 'e':
+                if (count_e)
+                    usage("Option -e, --email must not be given more than once");
+                ++count_e;
+                
+                filter_email = 1;
+                break;
+            case 's':
+                if (count_s)
+                    usage("Option -s, --sort must not be given more than once");
+                ++count_s;
+                
+                sort_output = 1;
+                break;
+            case 'r':
+                if (count_r)
+                    usage("Option -r, --recursive must not be given more than once");
+                ++count_r;
+                
+                search_recursive = 1;
+                break;
             case '?':
                 usage("Invalid option provided");
             case ':':
@@ -139,7 +187,13 @@ int main(int argc, char **argv)
 
     char *stripped_url = url_without_protocol(url);
 
-    
+    //create hint struct and struct that will store the result from getaddrinfo
+
+    //create socket
+
+    //connect
+
+    //etc.
 
 
     if (custom_port_provided) {
