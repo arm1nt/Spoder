@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <regex.h>
 #include <stdlib.h>
+#include <limits.h>
 
 void error_exit(const char* msg);
 

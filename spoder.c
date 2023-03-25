@@ -2,10 +2,6 @@
 #include <stdlib.h>
 #include <getopt.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-
 #include "utilities.h"
 
 char *prog_name;
@@ -74,7 +70,9 @@ int main(int argc, char **argv)
     int *longindex = NULL;
 
     //TODO: Let user pass cookie / session id -> if multiples cookies, cookies as list: cookie1,cookie2,cookie3
-    //      username and password if site is password protected
+    //      username and password if site is password protected (if not specified in the url already)
+    //      Allow user to disable URL checkes etc.
+    //      Allow user to pass in headers e.g -H "Host: example.host"
     static struct option longoptions[] = {
         {"port", required_argument, NULL, 'p'},
         {"help", no_argument, NULL, 'h'},
@@ -91,7 +89,7 @@ int main(int argc, char **argv)
     u_int8_t count_v = 0;
     u_int8_t count_o = 0;
     u_int8_t count_p = 0;
-    u_int8_t count_t = 0;
+    u_int8_t count_t = 0; //Maybe rename, _t shouldnt be used as postifx
     u_int8_t count_e = 0;
     u_int8_t count_s = 0;
     u_int8_t count_r = 0;
@@ -104,8 +102,6 @@ int main(int argc, char **argv)
     u_int8_t custom_port_provided = 0;
     char *port = "80";
     char *output_file = NULL;
-
-    char *option_limit_err_msg = "Option, -%s, --%s must not be given more than %s";
 
     while ((c = getopt_long(argc, argv, ":hvo:p:tesr", longoptions, longindex)) != -1) {
         switch(c) {
@@ -178,20 +174,25 @@ int main(int argc, char **argv)
         usage("Invalid protocol given, only accepted protocols are:\n\t- http\n\t- https\n");
 
 
+    //TODO: validate that the URL a valid format
+
+
     char *stripped_url = url_without_protocol(url);
 
     char *node = extract_node(stripped_url);
 
     //TODO: extract path from url
 
-    //create hint struct and struct that will store the result from getaddrinfo
-
-    //create socket
-
-    //connect
-
-    //etc.
-
+    
+    //create linked list or mabe stack idk doesnt rly matter ~zzz
+    //  this list will hold the initial link and all the links we find when parsing the web page
+    //  if there is a node in the list (node contains url to connect to and port)
+    //  make a get request and search the page
+    //  while (list.hasNext()) {
+    //      int fd = establish_connection(list.node, list.port);
+    //      
+    //      parse etc.
+    //  }
 
     if (custom_port_provided) {
         free(port);
