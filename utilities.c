@@ -6,9 +6,9 @@
  * 
  * @param msg Message containing information about the problem.
  */
-void error_exit(const char* msg)
+void error_exit(const char *msg)
 {
-    fprintf(stderr, "[./spoder]: %s: %s\n", msg, strerror(errno));
+    fprintf(stderr, "[ERROR]: ./spoder: %s: %s\n", msg, strerror(errno));
     exit(EXIT_FAILURE);
 }
 
@@ -18,7 +18,7 @@ void error_exit(const char* msg)
  * 
  * @param msg Custom error msg to be printed.
  */
-void error_exit_custom(const char* msg)
+void error_exit_custom(const char *msg)
 {
     fprintf(stderr, "[ERROR]: ./spoder: %s\n", msg);
     exit(EXIT_FAILURE);
@@ -32,7 +32,7 @@ void error_exit_custom(const char* msg)
  * @param function regex function in which the error occured
  * @param msg 
  */
-void regex_error_exit(int error_code, const char* function, regex_t* regex)
+void regex_error_exit(int error_code, const char *function, regex_t *regex)
 {
     char msgbuffer[100];
 
@@ -55,7 +55,7 @@ void regex_error_exit(int error_code, const char* function, regex_t* regex)
  * @param url 
  * @return short returns a positive number if protocol is accepted and otherwise a negative number
  */
-short check_url_protocol(const char* url)
+short check_url_protocol(const char *url)
 {
 
     if (strncmp(url, "http://", strlen("http://")) == 0 || strncmp(url, "https://", strlen("https://")) == 0)
@@ -72,7 +72,7 @@ short check_url_protocol(const char* url)
  * @param url url of which the protocoll should be stripped
  * @return char* url without protocol
  */
-char* url_without_protocol(const char* url)
+char *url_without_protocol(const char *url)
 {
     if (strncmp(url, "http://", strlen("http://")) == 0)
         return strdup(&url[7]);
@@ -90,9 +90,9 @@ char* url_without_protocol(const char* url)
  * @param url URL from which the node should be extracted.
  * @return char* the extracted node. The node has to be freed.
  */
-char* extract_node(const char* url)
+char *extract_node(const char *url)
 {
-    char* node;
+    char *node;
 
     if (strchr(url, '/') != NULL) {
         int index_of_first_slash = (int) ((strchr(url, '/')) - url);
@@ -107,7 +107,7 @@ char* extract_node(const char* url)
         node = strdup(url);
     }
 
-    char* regex_expression = "[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,63}(/[^[:space:]]*)?$";
+    char *regex_expression = "[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,63}(/[^[:space:]]*)?$";
 
     regex_t regex;
     int rc;
@@ -126,4 +126,16 @@ char* extract_node(const char* url)
     }
 
     return node;
+}
+
+
+/**
+ * @brief 
+ * 
+ * @param url 
+ * @return char* Returns path, if no path is given '/' is returned to request the root
+ */
+char *extract_path(const char *url)
+{
+    char *path;
 }

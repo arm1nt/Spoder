@@ -37,7 +37,7 @@ static void help(void)
  * 
  * @param msg Information about the problem.
  */
-static void usage(const char* msg)
+static void usage(const char *msg)
 {
     fprintf(stderr, "[ERROR]: %s\n", msg);
     help();
@@ -53,10 +53,15 @@ static void usage(const char* msg)
  * @param option_counter how often the option has occured so far. If option_counter < limit, then
  *  the option_counter is incremented.
  */
-static void check_option_limit(const char* short_option, const char* long_option, 
-    const char* limit, u_int8_t* option_counter)
+static void check_option_limit(const char *short_option, const char *long_option, 
+    const char *limit, u_int8_t *option_counter, u_int8_t option_limit)
 {
-    //TODO: implement.
+    if (*option_counter >= option_limit) {
+        char buffer[1024];
+        sprintf(buffer, "Option -%s, --%s must not be given more than %s", short_option, long_option, limit);
+        usage(buffer);
+    }
+    (*option_counter)++;
 }
 
 
@@ -68,6 +73,8 @@ int main(int argc, char **argv)
     int c;
     int *longindex = NULL;
 
+    //TODO: Let user pass cookie / session id -> if multiples cookies, cookies as list: cookie1,cookie2,cookie3
+    //      username and password if site is password protected
     static struct option longoptions[] = {
         {"port", required_argument, NULL, 'p'},
         {"help", no_argument, NULL, 'h'},
@@ -80,7 +87,7 @@ int main(int argc, char **argv)
         0
     };
 
-    //Check that option occurs max. once (or max. given limit if specified otherwise)
+
     u_int8_t count_v = 0;
     u_int8_t count_o = 0;
     u_int8_t count_p = 0;
@@ -95,23 +102,19 @@ int main(int argc, char **argv)
     u_int8_t sort_output = 0;
     u_int8_t search_recursive = 0;
     u_int8_t custom_port_provided = 0;
-    char* port = "80";
-    char* output_file = NULL;
+    char *port = "80";
+    char *output_file = NULL;
 
-    char* option_limit_err_msg = "Option, -%s, --%s must not be given more than %s";
+    char *option_limit_err_msg = "Option, -%s, --%s must not be given more than %s";
 
-    //TODO: Refactor: Move checking if option has already occured and incrementing counter to function!
     while ((c = getopt_long(argc, argv, ":hvo:p:tesr", longoptions, longindex)) != -1) {
         switch(c) {
             case 'h':
                 help();
             case 'p':
-                if (count_p)
-                    usage("Option -p, --port must not be given more than once");
+                check_option_limit("p", "port", "once", &count_p, 1);
 
-                ++count_p;
-
-                const char* invalid_port_msg = "Port must be a positive integer between 0 and 65535";
+                const char *invalid_port_msg = "Port must be a positive integer between 0 and 65535";
 
                 if (*optarg == '\0')
                     usage(invalid_port_msg);
@@ -127,52 +130,39 @@ int main(int argc, char **argv)
                 
                 break;
             case 'o':
-                if (count_o)
-                    usage("Option -o, --output must not be given more than once");
-
-                ++count_o;
+                check_option_limit("o", "output", "once", &count_o, 1);
 
                 output_file = strdup(optarg);
                 break;
             case 'v':
-                if (count_v)
-                    usage("Option -v, --verbose must not be given more than once");
+                check_option_limit("v", "verbose", "once", &count_v, 1);
 
-                ++count_v;
                 is_verbose = 1;
                 break;
             case 't':
-                if (count_t)
-                    usage("Option -t, --tel must not be given more than once");
-                ++count_t;
-                
+                check_option_limit("t", "tel", "once", &count_t, 1);
+
                 filter_tel = 1;
                 break;
             case 'e':
-                if (count_e)
-                    usage("Option -e, --email must not be given more than once");
-                ++count_e;
-                
+                check_option_limit("e", "email", "once", &count_e, 1);
+
                 filter_email = 1;
                 break;
             case 's':
-                if (count_s)
-                    usage("Option -s, --sort must not be given more than once");
-                ++count_s;
-                
+                check_option_limit("s", "sort", "once", &count_s, 1);
+
                 sort_output = 1;
                 break;
             case 'r':
-                if (count_r)
-                    usage("Option -r, --recursive must not be given more than once");
-                ++count_r;
-                
+                check_option_limit("r", "recursive", "once", &count_r, 1);
+
                 search_recursive = 1;
                 break;
             case '?':
                 usage("Invalid option provided");
             case ':':
-                usage("Requiered argument for is missing");
+                usage("Required argument is missing");
             default:
                 error_exit("There was an error parsing the given options");
         }
@@ -190,7 +180,7 @@ int main(int argc, char **argv)
 
     char *stripped_url = url_without_protocol(url);
 
-    char* node = extract_node(stripped_url);
+    char *node = extract_node(stripped_url);
 
     //TODO: extract path from url
 
