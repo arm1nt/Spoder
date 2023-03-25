@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 #include <getopt.h>
 
 #include <sys/types.h>
@@ -46,14 +44,19 @@ static void usage(const char* msg)
 }
 
 /**
- * @brief Print an error msg, detailing the error and then exiting.
+ * @brief Checks that the option has not been provided more often than the specified limit.
+ *  If the option occurs more often than the specified limit, the usage function is called.
  * 
- * @param msg Message containing information about the problem.
+ * @param short_option short form of the option that has been provided (e.g. -h)
+ * @param long_option  long form of the option that has been provided (e.g. --help)
+ * @param limit specifies how often the option can occur at most.
+ * @param option_counter how often the option has occured so far. If option_counter < limit, then
+ *  the option_counter is incremented.
  */
-static void error_exit(const char* msg)
+static void check_option_limit(const char* short_option, const char* long_option, 
+    const char* limit, u_int8_t* option_counter)
 {
-    fprintf(stderr, "[%s]: %s: %s\n", prog_name, msg, strerror(errno));
-    exit(EXIT_FAILURE);
+    //TODO: implement.
 }
 
 
@@ -187,6 +190,10 @@ int main(int argc, char **argv)
 
     char *stripped_url = url_without_protocol(url);
 
+    char* node = extract_node(stripped_url);
+
+    //TODO: extract path from url
+
     //create hint struct and struct that will store the result from getaddrinfo
 
     //create socket
@@ -208,6 +215,9 @@ int main(int argc, char **argv)
 
     free(url);
     url = NULL;
+    
+    free(node);
+    node = NULL;
 
     return EXIT_SUCCESS;
 }
