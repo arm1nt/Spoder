@@ -4,7 +4,7 @@
  * @brief Make connection based on node and port.
  * 
  * @param node node (e.g. www.example.com)
- * @param port port (443)
+ * @param port port (e.g. 443)
  * @return int number > 0 (filedescriptor) if connection
  *  was established; -1 if unable to establish connection.
  */
@@ -34,6 +34,9 @@ int establish_connection(const char *node, const char *port)
         if (connect(socket_fd, rp->ai_addr, rp->ai_addrlen) != -1)
             break;
     }
+
+    if (rp == NULL)
+        socket_fd = -1;
 
     freeaddrinfo(result);
 
