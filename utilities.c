@@ -84,6 +84,32 @@ char *url_without_protocol(const char *url)
 }
 
 
+/**
+ * @brief Checks if the given URL is valid or not.
+ * 
+ * @param url url to be checked.
+ */
+void check_valid_url(const char *url)
+{
+    char *regex_expression = "[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,63}(/[^[:space:]]*)?$";
+
+    regex_t regex;
+    int rc;
+
+    if ((rc = regcomp(&regex, regex_expression, REG_EXTENDED)) != 0)
+        regex_error_exit(rc, "regcomp", &regex);
+
+    int result = regexec(&regex, url, 0, 0, 0);
+
+    regfree(&regex);
+
+    if (result == REG_NOMATCH) {
+        error_exit_custom("Invalid URL given - malformed node");
+    } else if(result < 0) {
+        regex_error_exit(result, "regexec", NULL);
+    }
+}
+
 
 /**
  * @brief Find the character that terminates the host name in the specified url
@@ -163,24 +189,6 @@ char *extract_node(const char *url)
     } else {
         node = strdup(url);
     }*/
-
-    char *regex_expression = "[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,63}(/[^[:space:]]*)?$";
-
-    regex_t regex;
-    int rc;
-
-    if ((rc = regcomp(&regex, regex_expression, REG_EXTENDED)) != 0)
-        regex_error_exit(rc, "regcomp", &regex);
-
-    int result = regexec(&regex, url, 0, 0, 0);
-
-    regfree(&regex);
-
-    if (result == REG_NOMATCH) {
-        error_exit_custom("Invalid URL given - malformed node");
-    } else if(result < 0) {
-        regex_error_exit(result, "regexec", NULL);
-    }
 
     return node;
 }

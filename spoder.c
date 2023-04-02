@@ -174,10 +174,10 @@ int main(int argc, char **argv)
         usage("Invalid protocol given, only accepted protocols are:\n\t- http\n\t- https\n");
 
 
-    //TODO: validate that the URL a valid format
-
-
     char *stripped_url = url_without_protocol(url);
+
+    //TODO: let caller handle errors, instead of exiting in function
+    check_valid_url(stripped_url);
 
     char *node = extract_node(stripped_url);
 
