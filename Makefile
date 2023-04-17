@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -std=c99 -pedantic
 
-OBJECTS = spoder.o utilities.o socket.o
+OBJECTS = spoder.o utilities.o connection.o
 
 .PHONY: all clean
 
@@ -14,8 +14,8 @@ spoder: $(OBJECTS)
 %.o: %.c
 	$(CC) -c -o $@ $<
 
-spoder.o: spoder.c utilities.h
-socket.o: socket.c socket.h utilities.h
+spoder.o: spoder.c utilities.h connection.h
+connection.o: connection.c connection.h utilities.h
 utilities.o: utilities.c utilities.h
 
 

@@ -3,15 +3,8 @@
 #include <getopt.h>
 #include <unistd.h>
 
-#include <openssl/x509.h>
-#include <openssl/crypto.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-
 #include "utilities.h"
-#include "socket.h"
+#include "connection.h"
 
 char *prog_name;
 
@@ -192,30 +185,26 @@ int main(int argc, char **argv)
     //TODO: extract path from url
 
 
-    //move to own method
-    //only call if port 443 has been provided
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-    SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
-    if (!ctx)
-        error_exit("Failed to create SSL context.");
+    SSL_CTX *ctx = NULL;
+    if (strncmp(port, "443", strlen("443")) == 0) {
+        ctx = initialize_ssl_context();
 
+        if (!ctx)
+        error_exit("Failed to create SSL context.");
+    }
+    
     int socket_fd = establish_connection(node, port);
 
     if (socket_fd == -1)
         error_exit("Failed to connect to service");
 
-    SSL *ssl = SSL_new(ctx);
-    if (!ssl)
-        error_exit("SSL_new failed");
-    
-    int set_fd_result = SSL_set_fd(ssl, socket_fd);
-    if (!set_fd_result)
-        error_exit("set_fd_result failed");
+    SSL *ssl = NULL;
 
-    if (SSL_connect(ssl) == -1)
-        error_exit("SSL_connect failed");
+    if (strncmp(port, "443", strlen("443")) == 0) {
+        ssl = create_ssl_connection(ctx, socket_fd);
+    }
+
+     
 
     //TODO: add certificate validation
 

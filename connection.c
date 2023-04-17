@@ -1,4 +1,4 @@
-#include "socket.h"
+#include "connection.h"
 
 /**
  * @brief Make connection based on node and port.
@@ -41,4 +41,44 @@ int establish_connection(const char *node, const char *port)
     freeaddrinfo(result);
 
     return socket_fd;
+}
+
+/**
+ * @brief Initialize ssl context.
+ * 
+ * @return SSL_CTX* pointer to context struct
+ */
+SSL_CTX *initialize_ssl_context(void)
+{
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+    return SSL_CTX_new(TLS_client_method());
+}
+
+/**
+ * @brief Create a ssl connection object
+ * 
+ * @param ctx 
+ * @return SSL* 
+ */
+SSL *create_ssl_connection(SSL_CTX *ctx, u_int32_t socket_fd)
+{
+
+    //TODO: rewrite so caller has to exit.
+    //  maybe set errno?
+
+    SSL *ssl = SSL_new(ctx);
+    if (!ssl)
+        error_exit("SSL_new failed");
+    
+    int set_fd_result = SSL_set_fd(ssl, socket_fd);
+    if (!set_fd_result)
+        error_exit("set_fd_result failed");
+
+    if (SSL_connect(ssl) == -1)
+        error_exit("SSL_connect failed");
+
+    return ssl;
 }
