@@ -12,7 +12,6 @@ void error_exit(const char *msg)
     exit(EXIT_FAILURE);
 }
 
-
 /**
  * @brief Prints only a custom error msg and then exits.
  * 
@@ -23,7 +22,6 @@ void error_exit_custom(const char *msg)
     fprintf(stderr, "[ERROR]: ./spoder: %s\n", msg);
     exit(EXIT_FAILURE);
 }
-
 
 /**
  * @brief Prints an error msg regarding an regex error, detailing the error and then exiting.
@@ -45,7 +43,6 @@ void regex_error_exit(int error_code, const char *function, regex_t *regex)
     exit(EXIT_FAILURE);
 }
 
-
 /**
  * @brief Check that the given URL uses a valid protocol.
  *  Accepted protocols are:
@@ -64,7 +61,6 @@ short check_url_protocol(const char *url)
     return -1;
 }
 
-
 /**
  * @brief Return the URL without the protocol, e.g. http://example.com -> return: example.com
  *      If the protocol is not recognized, NULL is returned
@@ -82,7 +78,6 @@ char *url_without_protocol(const char *url)
 
     return NULL;
 }
-
 
 /**
  * @brief Checks if the given URL is valid or not.
@@ -109,7 +104,6 @@ void check_valid_url(const char *url)
         regex_error_exit(result, "regexec", NULL);
     }
 }
-
 
 /**
  * @brief Find the character that terminates the host name in the specified url
@@ -150,7 +144,6 @@ static char *host_terminating_character(const char *url)
 
     return NULL;
 }
-
 
 /**
  * @brief Extract node from the url (e.g. www.example.com/f1/f2/f3 -> www.example.com)
@@ -193,7 +186,6 @@ char *extract_node(const char *url)
     return node;
 }
 
-
 /**
  * @brief 
  * 
@@ -205,4 +197,11 @@ char *extract_path(const char *url)
     char *path;
 
     //TODO: implement
+}
+
+//TODO: also pass an array where you can define custom headers
+//for required headers, check if there custom ones have been passed.
+char *create_http_header(const char *service, const char **cusotm_headers)
+{
+    return NULL;
 }

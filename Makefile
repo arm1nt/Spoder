@@ -9,7 +9,7 @@ all: spoder
 
 
 spoder: $(OBJECTS)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ -lcrypto -lssl
 
 %.o: %.c
 	$(CC) -c -o $@ $<

@@ -1,8 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <unistd.h>
+
+#include <openssl/x509.h>
+#include <openssl/crypto.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 
 #include "utilities.h"
+#include "socket.h"
 
 char *prog_name;
 
@@ -176,13 +185,55 @@ int main(int argc, char **argv)
 
     char *stripped_url = url_without_protocol(url);
 
-    //TODO: let caller handle errors, instead of exiting in function
     check_valid_url(stripped_url);
 
     char *node = extract_node(stripped_url);
 
     //TODO: extract path from url
 
+
+    //move to own method
+    //only call if port 443 has been provided
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+    SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+    if (!ctx)
+        error_exit("Failed to create SSL context.");
+
+    int socket_fd = establish_connection(node, port);
+
+    if (socket_fd == -1)
+        error_exit("Failed to connect to service");
+
+    SSL *ssl = SSL_new(ctx);
+    if (!ssl)
+        error_exit("SSL_new failed");
+    
+    int set_fd_result = SSL_set_fd(ssl, socket_fd);
+    if (!set_fd_result)
+        error_exit("set_fd_result failed");
+
+    if (SSL_connect(ssl) == -1)
+        error_exit("SSL_connect failed");
+
+    //TODO: add certificate validation
+
+    //***********************************
+    //***********************************
+    char buffer[2048];
+    sprintf(buffer, "GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nUser-Agent: spoder\r\n\r\n", node);
+    SSL_write(ssl, buffer, strlen(buffer));
+
+    int bytes_received = SSL_read(ssl, buffer, sizeof(buffer));
+    if (bytes_received < 1)
+        printf("Connection close\n");
+    
+    printf("Received (%d bytes): '%.*s'\n", bytes_received, bytes_received, buffer);
+    fflush(stdout);
+    //***********************************
+    //***********************************
+    
     
     //create linked list or mabe stack idk doesnt rly matter ~zzz
     //  this list will hold the initial link and all the links we find when parsing the web page
@@ -193,6 +244,11 @@ int main(int argc, char **argv)
     //      
     //      parse etc.
     //  }
+
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    SSL_CTX_free(ctx);
+    close(socket_fd);
 
     if (custom_port_provided) {
         free(port);
