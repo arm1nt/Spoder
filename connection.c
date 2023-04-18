@@ -58,27 +58,26 @@ SSL_CTX *initialize_ssl_context(void)
 }
 
 /**
- * @brief Create a ssl connection object
+ * @brief Fill ssl connection object
  * 
- * @param ctx 
- * @return SSL* 
+ * @param ssl struct to be filled
+ * @param ctx context
+ * @param socket_fd file descriptor for connection
+ * @return int negative number if error occured, positive number otherwise
  */
-SSL *create_ssl_connection(SSL_CTX *ctx, u_int32_t socket_fd)
+int create_ssl_connection(SSL **ssl, SSL_CTX *ctx, u_int32_t socket_fd)
 {
 
-    //TODO: rewrite so caller has to exit.
-    //  maybe set errno?
-
-    SSL *ssl = SSL_new(ctx);
-    if (!ssl)
-        error_exit("SSL_new failed");
+    *ssl = SSL_new(ctx);
+    if (!*ssl)
+        return -1;
     
-    int set_fd_result = SSL_set_fd(ssl, socket_fd);
+    int set_fd_result = SSL_set_fd(*ssl, socket_fd);
     if (!set_fd_result)
-        error_exit("set_fd_result failed");
+        return -2;
 
-    if (SSL_connect(ssl) == -1)
-        error_exit("SSL_connect failed");
+    if (SSL_connect(*ssl) == -1)
+        return -3;
 
-    return ssl;
+    return 1;
 }

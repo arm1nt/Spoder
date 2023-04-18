@@ -201,10 +201,15 @@ int main(int argc, char **argv)
     SSL *ssl = NULL;
 
     if (strncmp(port, "443", strlen("443")) == 0) {
-        ssl = create_ssl_connection(ctx, socket_fd);
+        int result = create_ssl_connection(&ssl, ctx, socket_fd);
+        if (result == -1) {
+            error_exit("SSL_new failed");
+        } else if (result == -2) {
+            error_exit("SSL_set_fd failed");
+        } else if (result == -3) {
+            error_exit("SSL_connect failed");
+        }
     }
-
-     
 
     //TODO: add certificate validation
 
@@ -212,14 +217,16 @@ int main(int argc, char **argv)
     //***********************************
     char buffer[2048];
     sprintf(buffer, "GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nUser-Agent: spoder\r\n\r\n", node);
-    SSL_write(ssl, buffer, strlen(buffer));
+    SSL_write(ssl, buffer, strlen("GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nUser-Agent: spoder\r\n\r\n") + strlen(node) + 2);
 
-    int bytes_received = SSL_read(ssl, buffer, sizeof(buffer));
-    if (bytes_received < 1)
-        printf("Connection close\n");
-    
-    printf("Received (%d bytes): '%.*s'\n", bytes_received, bytes_received, buffer);
-    fflush(stdout);
+    int bytes_received = 0;
+
+    do {
+        bytes_received = SSL_read(ssl, buffer, sizeof(buffer));
+        printf("Received (%d bytes): '%s'\n", bytes_received, buffer);
+        fflush(stdout);
+    } while( bytes_received >= 1);
+
     //***********************************
     //***********************************
     

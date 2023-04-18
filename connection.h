@@ -15,4 +15,4 @@ int establish_connection(const char *node, const char *port);
 
 SSL_CTX *initialize_ssl_context(void);
 
-SSL *create_ssl_connection(SSL_CTX *ctx, u_int32_t socket_fd);
+int create_ssl_connection(SSL **ssl, SSL_CTX *ctx, u_int32_t socket_fd);
