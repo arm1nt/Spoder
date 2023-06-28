@@ -10,7 +10,7 @@
 
 typedef struct TextBuffer {
     char *data;
-    size_t available_size;
+    size_t available_size; //TODO: maybe rename to total_size
     size_t used_size;
 } TextBuffer;
 

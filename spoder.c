@@ -5,6 +5,7 @@
 
 #include "utilities.h"
 #include "connection.h"
+#include "parser.h"
 
 #define BUFFER_SIZE 2048
 #define TEXTBUFFER_SIZE 2048
@@ -234,16 +235,24 @@ int main(int argc, char **argv)
 
     char inside_tag = 0;
     char fullText = 0;
+    u_short previous_char_blank = 0;
 
     int bytes;
     do {
         memset(buffer, '\0', BUFFER_SIZE);
         bytes = SSL_read(ssl, buffer, BUFFER_SIZE);
 
+
         if (bytes < 1) {
+            //TODO: if we still have text inside the text_buffer, parse it
+            printf("%s\n", text_buffer->data);
+
+            fflush(stdout);
             printf("Connection closed.\n");
             break;
         }
+
+        //TODO: section that parses the header, to react to redirect
 
         u_int32_t buffer_counter = 0;
 
@@ -259,14 +268,20 @@ int main(int argc, char **argv)
             //TODO: maybe create a list to store the key="value" pairs inside the tag element
         }
 
-        while (buffer_counter < strlen(buffer) ) {
+        while (buffer_counter < BUFFER_SIZE ) {
             if (buffer[buffer_counter] == '<') {
                 //TODO: Parse the text_buffer, if it has content
+                if (text_buffer->used_size > 0)
+                    //initiate_parsing(text_buffer->data);
 
                 //TODO: only clear buffer if it has content otherwise we have a useless operations for cases like <h1><p1>example</p1></h1>
-                //printf("%s", text_buffer->data);
+                if (text_buffer->used_size > 0) {
+                    printf("%s", text_buffer->data);
+                }
+
 
                 //clear and reset text_buffer
+                //TODO: make function for resetting buffer
                 text_buffer->data = (char *) realloc(text_buffer->data, TEXTBUFFER_SIZE * sizeof(char));
                 if (text_buffer->data == NULL)
                     error_exit("realloc failed when resetting text buffer");
@@ -286,29 +301,40 @@ int main(int argc, char **argv)
             }
 
 
-            //TODO: remove continuous blank spaces
-            if(buffer[buffer_counter] != '\t' && buffer[buffer_counter] != '\n') {
-
-                if (text_buffer->used_size >= text_buffer->available_size-1) {
-                    text_buffer->data = (char *) realloc(text_buffer->data, text_buffer->available_size + (1024 * sizeof(char)));
-                    if (text_buffer->data == NULL)
-                        error_exit("realloc failed when expanding text_buffer");
-
-                    text_buffer->available_size += 1024;
+            if (text_buffer->used_size >= text_buffer->available_size-1) {
+                text_buffer->data = (char *) realloc(text_buffer->data, text_buffer->available_size + (1024 * sizeof(char)));
+                if (text_buffer->data == NULL)
+                    error_exit("realloc failed when expanding text_buffer");
+                text_buffer->available_size += 1024;
+            }
+            char *insert;
+            if(buffer[buffer_counter] == 0xA)  { //LF
+                if (previous_char_blank) {
+                    buffer_counter++;
+                    continue;
                 }
-
-                /*
-                text_buffer[currently_used_buffer_size] = buffer[buffer_counter];
-                text_buffer[currently_used_buffer_size+1] = '\0';
-                 */
-
-                strncat(text_buffer->data, &buffer[buffer_counter], 1);
-                printf("%c", buffer[buffer_counter]);
-                text_buffer->used_size++;
+                *insert = ' ';
+                previous_char_blank = 1;
+            } else if (buffer[buffer_counter] == 0xD || buffer[buffer_counter] == 0x09) { //CR and tab
+                //TODO: create function with all
+                buffer_counter++;
+                continue;
+            } else if (buffer[buffer_counter] == 0x20) { //Blank space
+                if (previous_char_blank) {
+                    buffer_counter++;
+                    continue;
+                }
+                *insert = ' ';
+                previous_char_blank = 1;
+            } else {
+                previous_char_blank = 0;
+                insert = &buffer[buffer_counter];
             }
 
-            buffer_counter++;
+            strncat(text_buffer->data, insert, 1);
+            text_buffer->used_size++;
 
+            buffer_counter++;
         }
 
     } while (bytes > 0);
