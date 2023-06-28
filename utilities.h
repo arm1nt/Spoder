@@ -1,9 +1,18 @@
+#ifndef LIBUTILITIES
+#define LIBUTILITIES
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <regex.h>
 #include <stdlib.h>
 #include <limits.h>
+
+typedef struct TextBuffer {
+    char *data;
+    size_t available_size;
+    size_t used_size;
+} TextBuffer;
 
 void error_exit(const char* msg);
 
@@ -20,3 +29,5 @@ char* url_without_protocol(const char* url);
 char* extract_node(const char* url);
 
 short search_for_tag_end(char *buffer, u_short buffer_counter);
+
+#endif

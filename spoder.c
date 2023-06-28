@@ -224,15 +224,14 @@ int main(int argc, char **argv)
     if (write_ret <= 0) //TODO: check if request is retryable and if so, do so
         error_exit("ssl_write failed");
 
+    TextBuffer *text_buffer = malloc(sizeof(TextBuffer));
+    text_buffer->data = malloc(TEXTBUFFER_SIZE * sizeof(char));
+    text_buffer->available_size = TEXTBUFFER_SIZE;
+    text_buffer->used_size = 0;
 
-
-    //TODO: Refactor to use Text Buffer struct
-    char *text_buffer = malloc(TEXTBUFFER_SIZE * sizeof(char));
-    if (text_buffer == NULL)
+    if (text_buffer->data == NULL)
         error_exit("malloc failed for text_buffer");
 
-    int currently_used_buffer_size = 0;
-    unsigned int available_buffer_size = TEXTBUFFER_SIZE;
     char inside_tag = 0;
     char fullText = 0;
 
@@ -265,16 +264,16 @@ int main(int argc, char **argv)
                 //TODO: Parse the text_buffer, if it has content
 
                 //TODO: only clear buffer if it has content otherwise we have a useless operations for cases like <h1><p1>example</p1></h1>
-                printf("%s", text_buffer);
+                //printf("%s", text_buffer->data);
 
                 //clear and reset text_buffer
-                text_buffer = (char *) realloc(text_buffer, TEXTBUFFER_SIZE * sizeof(char));
-                if (text_buffer == NULL)
+                text_buffer->data = (char *) realloc(text_buffer->data, TEXTBUFFER_SIZE * sizeof(char));
+                if (text_buffer->data == NULL)
                     error_exit("realloc failed when resetting text buffer");
 
-                memset(text_buffer, '\0', TEXTBUFFER_SIZE);
-                currently_used_buffer_size = 0;
-                available_buffer_size = TEXTBUFFER_SIZE;
+                memset(text_buffer->data, '\0', TEXTBUFFER_SIZE);
+                text_buffer->used_size = 0;
+                text_buffer->available_size = TEXTBUFFER_SIZE;
 
 
                 buffer_counter = search_for_tag_end(buffer, buffer_counter);
@@ -290,12 +289,12 @@ int main(int argc, char **argv)
             //TODO: remove continuous blank spaces
             if(buffer[buffer_counter] != '\t' && buffer[buffer_counter] != '\n') {
 
-                if (currently_used_buffer_size >= available_buffer_size-1) {
-                    text_buffer = (char *) realloc(text_buffer, available_buffer_size + (1024 * sizeof(char)));
-                    if (text_buffer == NULL)
+                if (text_buffer->used_size >= text_buffer->available_size-1) {
+                    text_buffer->data = (char *) realloc(text_buffer->data, text_buffer->available_size + (1024 * sizeof(char)));
+                    if (text_buffer->data == NULL)
                         error_exit("realloc failed when expanding text_buffer");
 
-                    available_buffer_size += 1024;
+                    text_buffer->available_size += 1024;
                 }
 
                 /*
@@ -303,8 +302,9 @@ int main(int argc, char **argv)
                 text_buffer[currently_used_buffer_size+1] = '\0';
                  */
 
-                strncat(text_buffer, &buffer[buffer_counter], 1);
-                currently_used_buffer_size++;
+                strncat(text_buffer->data, &buffer[buffer_counter], 1);
+                printf("%c", buffer[buffer_counter]);
+                text_buffer->used_size++;
             }
 
             buffer_counter++;

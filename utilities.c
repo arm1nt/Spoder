@@ -1,12 +1,6 @@
 #include "utilities.h"
 
 
-typedef struct {
-    char *data;
-    size_t size;
-    size_t used_size;
-} text_buffer;
-
 /**
  * @brief Print an error msg, detailing the error and then exiting.
  * 
