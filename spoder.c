@@ -6,6 +6,9 @@
 #include "utilities.h"
 #include "connection.h"
 
+#define BUFFER_SIZE 2048
+#define TEXTBUFFER_SIZE 2048
+
 char *prog_name;
 
 
@@ -91,7 +94,7 @@ int main(int argc, char **argv)
     u_int8_t count_v = 0;
     u_int8_t count_o = 0;
     u_int8_t count_p = 0;
-    u_int8_t count_t = 0; //Maybe rename, _t shouldnt be used as postifx
+    u_int8_t count_t = 0;
     u_int8_t count_e = 0;
     u_int8_t count_s = 0;
     u_int8_t count_r = 0;
@@ -166,6 +169,7 @@ int main(int argc, char **argv)
         }
     }
 
+
     if (argc - optind != 1)
         usage("URL must be given as positional argument");
 
@@ -176,6 +180,8 @@ int main(int argc, char **argv)
         usage("Invalid protocol given, only accepted protocols are:\n\t- http\n\t- https\n");
 
 
+    //TODO: Refactor extracting protocol, node, path etc. from given URL
+
     char *stripped_url = url_without_protocol(url);
 
     check_valid_url(stripped_url);
@@ -185,61 +191,128 @@ int main(int argc, char **argv)
     //TODO: extract path from url
 
 
-    SSL_CTX *ctx = NULL;
-    if (strncmp(port, "443", strlen("443")) == 0) {
-        ctx = initialize_ssl_context();
 
-        if (!ctx)
-        error_exit("Failed to create SSL context.");
-    }
-    
+    //TODO: Refactor into methods and do proper error handling
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+    SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+
     int socket_fd = establish_connection(node, port);
 
-    if (socket_fd == -1)
-        error_exit("Failed to connect to service");
-
-    SSL *ssl = NULL;
-
-    if (strncmp(port, "443", strlen("443")) == 0) {
-        int result = create_ssl_connection(&ssl, ctx, socket_fd);
-        if (result == -1) {
-            error_exit("SSL_new failed");
-        } else if (result == -2) {
-            error_exit("SSL_set_fd failed");
-        } else if (result == -3) {
-            error_exit("SSL_connect failed");
-        }
+    SSL *ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, socket_fd);
+    int ret;
+    if ((ret = SSL_connect(ssl)) <= 0) {
+        fprintf(stderr, "SSL_connect() failed.\n");
+        fprintf(stderr, "Error Num: %d\n", SSL_get_error(ssl, ret));
+        return EXIT_FAILURE;
     }
 
-    //TODO: add certificate validation
+    //TODO: allow for certificate validation
 
-    //***********************************
-    //***********************************
-    char buffer[2048];
-    sprintf(buffer, "GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nUser-Agent: spoder\r\n\r\n", node);
-    SSL_write(ssl, buffer, strlen("GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nUser-Agent: spoder\r\n\r\n") + strlen(node) + 2);
+    char buffer[BUFFER_SIZE];
 
-    int bytes_received = 0;
+    //TODO: Create function to construct http header
+    //TODO: Change resource to get from / to whatever path we extract from the given URL
+    sprintf(buffer, "GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nUser-Agent: Spoder\r\n\r\n", node);
 
+
+    int write_ret = SSL_write(ssl, buffer, BUFFER_SIZE);
+    if (write_ret <= 0) //TODO: check if request is retryable and if so, do so
+        error_exit("ssl_write failed");
+
+
+
+    //TODO: Refactor to use Text Buffer struct
+    char *text_buffer = malloc(TEXTBUFFER_SIZE * sizeof(char));
+    if (text_buffer == NULL)
+        error_exit("malloc failed for text_buffer");
+
+    int currently_used_buffer_size = 0;
+    unsigned int available_buffer_size = TEXTBUFFER_SIZE;
+    char inside_tag = 0;
+    char fullText = 0;
+
+    int bytes;
     do {
-        bytes_received = SSL_read(ssl, buffer, sizeof(buffer));
-        printf("Received (%d bytes): '%s'\n", bytes_received, buffer);
-        fflush(stdout);
-    } while( bytes_received >= 1);
+        memset(buffer, '\0', BUFFER_SIZE);
+        bytes = SSL_read(ssl, buffer, BUFFER_SIZE);
 
-    //***********************************
-    //***********************************
-    
-    
-    //create linked list or mabe stack idk doesnt rly matter ~zzz
-    //  this list will hold the initial link and all the links we find when parsing the web page
-    //  if there is a node in the list (node contains url to connect to and port)
-    //  make a get request and search the page
-    //  while (list.hasNext()) {
-    //      int fd = establish_connection(list.node, list.port);
-    //      
-    //      parse etc.
-    //  }
+        if (bytes < 1) {
+            printf("Connection closed.\n");
+            break;
+        }
+
+        u_int32_t buffer_counter = 0;
+
+        if (inside_tag) {
+            buffer_counter = search_for_tag_end(buffer, buffer_counter);
+
+            if (buffer_counter == -1) {
+                continue;
+            }
+            inside_tag = 0;
+
+
+            //TODO: maybe create a list to store the key="value" pairs inside the tag element
+        }
+
+        while (buffer_counter < strlen(buffer) ) {
+            if (buffer[buffer_counter] == '<') {
+                //TODO: Parse the text_buffer, if it has content
+
+                //TODO: only clear buffer if it has content otherwise we have a useless operations for cases like <h1><p1>example</p1></h1>
+                printf("%s", text_buffer);
+
+                //clear and reset text_buffer
+                text_buffer = (char *) realloc(text_buffer, TEXTBUFFER_SIZE * sizeof(char));
+                if (text_buffer == NULL)
+                    error_exit("realloc failed when resetting text buffer");
+
+                memset(text_buffer, '\0', TEXTBUFFER_SIZE);
+                currently_used_buffer_size = 0;
+                available_buffer_size = TEXTBUFFER_SIZE;
+
+
+                buffer_counter = search_for_tag_end(buffer, buffer_counter);
+
+                if (buffer_counter == -1) {
+                    inside_tag = 1;
+                    break;
+                }
+                continue;
+            }
+
+
+            //TODO: remove continuous blank spaces
+            if(buffer[buffer_counter] != '\t' && buffer[buffer_counter] != '\n') {
+
+                if (currently_used_buffer_size >= available_buffer_size-1) {
+                    text_buffer = (char *) realloc(text_buffer, available_buffer_size + (1024 * sizeof(char)));
+                    if (text_buffer == NULL)
+                        error_exit("realloc failed when expanding text_buffer");
+
+                    available_buffer_size += 1024;
+                }
+
+                /*
+                text_buffer[currently_used_buffer_size] = buffer[buffer_counter];
+                text_buffer[currently_used_buffer_size+1] = '\0';
+                 */
+
+                strncat(text_buffer, &buffer[buffer_counter], 1);
+                currently_used_buffer_size++;
+            }
+
+            buffer_counter++;
+
+        }
+
+    } while (bytes > 0);
+
 
     SSL_shutdown(ssl);
     SSL_free(ssl);
@@ -255,6 +328,9 @@ int main(int argc, char **argv)
         free(output_file);
         output_file = NULL;
     }
+
+    free(text_buffer);
+    text_buffer = NULL;
 
     free(url);
     url = NULL;

@@ -1,5 +1,6 @@
 #include "connection.h"
 
+
 /**
  * @brief Make connection based on node and port.
  * 
@@ -76,7 +77,7 @@ int create_ssl_connection(SSL **ssl, SSL_CTX *ctx, u_int32_t socket_fd)
     if (!set_fd_result)
         return -2;
 
-    if (SSL_connect(*ssl) == -1)
+    if (SSL_connect(*ssl) <= 0)
         return -3;
 
     return 1;

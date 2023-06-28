@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g -std=c99 -pedantic
+CFLAGS = -Wall -g -std=c99 -pedantic -O3
 
 OBJECTS = spoder.o utilities.o connection.o
 

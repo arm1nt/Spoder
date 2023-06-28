@@ -1,6 +1,12 @@
 #include "utilities.h"
 
 
+typedef struct {
+    char *data;
+    size_t size;
+    size_t used_size;
+} text_buffer;
+
 /**
  * @brief Print an error msg, detailing the error and then exiting.
  * 
@@ -204,4 +210,23 @@ char *extract_path(const char *url)
 char *create_http_header(const char *service, const char **cusotm_headers)
 {
     return NULL;
+}
+
+
+/**
+ * Finds the '>' symbol that ends a tag
+ *
+ * @param buffer
+ * @param buffer_counter
+ * @return
+ */
+short search_for_tag_end(char *buffer, u_short buffer_counter)
+{
+    //for(u_short i = buffer_counter; (i < strlen(buffer)) && buffer[i] != '\0'; ++i) {
+    for(u_short i = buffer_counter; (i < strlen(buffer)); ++i) {
+        if (buffer[i] == '>') {
+            return i+1;
+        }
+    }
+    return -1;
 }

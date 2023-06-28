@@ -18,3 +18,5 @@ void check_valid_url(const char *url);
 char* url_without_protocol(const char* url);
 
 char* extract_node(const char* url);
+
+short search_for_tag_end(char *buffer, u_short buffer_counter);
